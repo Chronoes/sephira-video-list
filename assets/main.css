@@ -1,0 +1,71 @@
+body {
+  margin-left: 5%;
+  margin-right: 5%;
+  background-color: #303030;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+a {
+  color: #e0e0e0;
+  text-decoration: none;
+}
+
+li {
+  list-style-type: none;
+}
+
+.videos__list {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.videos__list > li {
+  list-style-type: none;
+  margin-right: 0.5rem;
+  padding: 0.5rem;
+  max-width: 15vw;
+}
+
+.video__title {
+  font-weight: 600;
+}
+
+.video__thumbnail {
+  position: relative;
+}
+
+.video__thumbnail img {
+  width: 100%;
+  height: auto;
+}
+
+.video__length {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0;
+  padding: 0.25rem;
+  background-color: rgba(32, 32, 32, 0.9);
+  border-top-left-radius: 3px;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.video__size {
+  float: right;
+}
+
+.video__description {
+  font-size: 0.8rem;
+}
+
+@media screen and (max-width: 1200px) {
+  .videos__list > li {
+    max-width: 35vw;
+  }
+}
+@media screen and (max-width: 680px) {
+  .videos__list > li {
+    max-width: 100%;
+  }
+}
