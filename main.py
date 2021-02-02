@@ -1,15 +1,29 @@
 import argparse
+import collections
 import datetime
 import html
 import json
 import math
 import os
 import os.path
+import random
 import re
 import string
 import subprocess
 import sys
 from urllib.parse import quote
+
+from video_cache import create_video_list
+
+def unbounded_shuffle_gen(initlist):
+    list_copy = initlist[:]
+    random.shuffle(list_copy)
+    last_item = initlist[-1]
+    while True:
+        if last_item == list_copy[0]:
+            list_copy.append(list_copy.pop(0))
+        yield from list_copy
+        last_item = list_copy[-1]
 
 class VideoTemplate:
     def __init__(self, **templates):
@@ -17,14 +31,21 @@ class VideoTemplate:
         for template in templates:
             with open(templates[template]) as f:
                 self.templates[template] = string.Template(f.read())
+        self.placeholders = unbounded_shuffle_gen([
+            '/assets/sephira_closewink.webp',
+            '/assets/sephira_smile.webp',
+            '/assets/sephira_surprise.webp',
+            '/assets/sephira_upturned.webp',
+            '/assets/sephira_yandere.webp'
+        ])
 
     def create_html(self, template, **kwargs):
         return self.templates[template].substitute(kwargs)
 
     def create_playlist_html(self, **kwargs):
-        return self.templates['playlist'].substitute(
+        return self.create_html('playlist',
             title=kwargs['title'],
-            placeholder='https://via.placeholder.com/480x270',
+            placeholder=next(self.placeholders),
             thumbnail=html.escape(quote(kwargs['thumbnail'])),
             videos_href=html.escape(quote(kwargs['videos']))
         )
@@ -32,9 +53,9 @@ class VideoTemplate:
     def create_video_html(self, video_item):
         (video, mtime, size, video_length) = video_item['video']
 
-        return self.templates['video'].substitute(
+        return self.create_html('video',
             title=video_item['title'],
-            placeholder='https://via.placeholder.com/480x270',
+            placeholder=next(self.placeholders),
             thumbnail=html.escape('/' + quote(video_item['thumbnail'])),
             video=html.escape('/' + quote(video)),
             timestamp=mtime,
@@ -55,14 +76,6 @@ size_formats = ['B', 'KiB', 'MiB', 'GiB']
 def human_readable_size(size_bytes):
     power = int(math.log(size_bytes, 1024))
     return f'{round(size_bytes / (1024 ** power), 1)} {size_formats[power]}'
-
-def get_video_length(filename):
-    result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
-                             "format=duration", "-of",
-                             "default=noprint_wrappers=1:nokey=1", filename],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    return float(result.stdout)
 
 
 def sort_videos_and_playlists(playlist, video_dict):
@@ -140,8 +153,11 @@ def write_videos_html(playlist, video_tpl, output_folder):
 
 def argument_parser():
     parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--video-cache', help='Cache file for video and related files like description and thumbnail')
+    group.add_argument('--videos', help='Unprocessed videos\' folder')
+
     parser.add_argument('playlist', help='Playlists JSON')
-    parser.add_argument('videos', help='Videos\' folder')
     parser.add_argument('output', help='Output folder for HTML files')
     return parser
 
@@ -149,34 +165,11 @@ def main():
     parser = argument_parser()
     args = parser.parse_args()
 
-    video_dict = {}
-    with os.scandir(args.videos) as videos:
-        file_regex = re.compile(r'^[0-9]+-(.+)-([^.]{11})\.([a-z0-9]+)$')
-        for file in videos:
-            match = file_regex.match(file.name)
-            if not match:
-                continue
-
-            matched_id = match.group(2)
-            ext = match.group(3)
-            video_item = video_dict.setdefault(matched_id, {
-                'video': ('', 0, 0, 0),
-                'thumbnail': '',
-                'description': '',
-            })
-            if ext == 'mp4':
-                file_stat = file.stat()
-                video_item['title'] = match.group(1)
-                try:
-                    length = get_video_length(file.path)
-                except ValueError:
-                    print('Video corrupted', file.name, file=sys.stderr)
-                    length = 0
-                video_item['video'] = (file.name, file_stat.st_mtime, file_stat.st_size, length)
-            elif ext in ('jpg', 'webp'):
-                video_item['thumbnail'] = file.name
-            elif ext == 'description':
-                video_item['description'] = file.name
+    if args.videos:
+        video_dict = create_video_list(args.videos)
+    else:
+        with open(args.video_cache) as f:
+            video_dict = json.load(f)
 
     video_tpl = VideoTemplate(
         main='main.tpl.html',

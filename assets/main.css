@@ -1,17 +1,51 @@
 body {
-  margin-left: 5%;
-  margin-right: 5%;
   background-color: #303030;
-  color: #e0e0e0;
+  color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 a {
-  color: #e0e0e0;
+  color: #fff;
   text-decoration: none;
 }
 
 li {
   list-style-type: none;
+}
+
+.bg-container {
+  position: relative;
+}
+.bg-container::before {
+  content: '';
+  background-size: contain;
+  opacity: 0.3;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  z-index: -99;
+}
+
+.bg-container.sephira-wink::before {
+  background-image: url('/assets/sephira_closewink.webp');
+}
+.bg-container.sephira-smile::before {
+  background-image: url('/assets/sephira_smile.webp');
+}
+.bg-container.sephira-surprise::before {
+  background-image: url('/assets/sephira_surprise.webp');
+}
+.bg-container.sephira-upturned::before {
+  background-image: url('/assets/sephira_upturned.webp');
+}
+.bg-container.sephira-yandere::before {
+  background-image: url('/assets/sephira_yandere.webp');
+}
+
+.content {
+  margin-left: 5%;
+  margin-right: 5%;
 }
 
 .videos__list {
@@ -39,6 +73,9 @@ li {
   width: 100%;
   height: auto;
 }
+.video__thumbnail img[data-src=''] {
+  opacity: 0.8;
+}
 
 .video__length {
   position: absolute;
@@ -65,6 +102,10 @@ li {
   }
 }
 @media screen and (max-width: 680px) {
+  .content {
+    margin-left: 0;
+    margin-right: 0;
+  }
   .videos__list > li {
     max-width: 100%;
   }
