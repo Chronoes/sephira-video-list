@@ -1,0 +1,14 @@
+#!/bin/sh
+download () {
+    youtube-dl $1 --cookies .cookies-youtube-com.txt \
+        -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio' --merge-output-format mp4 \
+        -o "%(upload_date)s-%(title)s-%(id)s.%(ext)s" --write-description --write-thumbnail --write-info-json "$2"
+    if [ "$?" != "0" ]; then
+        echo '<--- Restarting youtube-dl after error --->'
+        download "$@"
+    fi
+}
+
+#download "--download-archive downloaded.txt" "$1"
+#download "--batch-file problematic.txt" "$1"
+download "--skip-download" "$1"

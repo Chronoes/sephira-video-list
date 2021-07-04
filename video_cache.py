@@ -17,7 +17,7 @@ def get_video_length(filename):
 def create_video_list(directory):
     video_dict = {}
     with os.scandir(directory) as videos:
-        file_regex = re.compile(r'^[0-9]+-(.+)-([^.]{11})\.([a-z0-9]+)$')
+        file_regex = re.compile(r'^[0-9]+-(.+)-([^.]{11})\.([a-z0-9.]+)$')
         for file in videos:
             match = file_regex.match(file.name)
             if not match:
@@ -29,6 +29,7 @@ def create_video_list(directory):
                 'video': ('', 0, 0, 0),
                 'thumbnail': '',
                 'description': '',
+                'view_count': 0
             })
             if ext == 'mp4':
                 file_stat = file.stat()
@@ -43,6 +44,10 @@ def create_video_list(directory):
                 video_item['thumbnail'] = file.name
             elif ext == 'description':
                 video_item['description'] = file.name
+            elif ext == 'info.json':
+                with open(file.path) as f:
+                    info_json = json.load(f)
+                    video_item['view_count'] = info_json['view_count']
 
     return video_dict
 
